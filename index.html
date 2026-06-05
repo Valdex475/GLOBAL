@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criterio 8,9 y 10 - Global Economics</title>
+    <link rel="stylesheet" href="styles.css" />
+
+</head>
+
+<body>
+    <h1 class="title">Criterio 8 y 9 - Santiago Valderrama</h1>
+    <div class="wrap">
+        <h2 class="sr-only">Calculadora de pruebas de hipótesis con carga de CSV, análisis por grupo y comparación entre
+            grupos</h2>
+        <div class="header">
+            <h1>Análisis de hipótesis</h1>
+            <p>Carga un CSV para analizar por grupos, o ingresa los parámetros manualmente</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('media')">Media</button>
+            <button class="tab" onclick="switchTab('proporcion')">Proporción</button>
+        </div>
+
+        <!-- CSV UPLOAD -->
+        <div class="upload-zone" id="upload-zone" onclick="document.getElementById('csv-input').click()"
+            ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')"
+            ondrop="event.preventDefault();this.classList.remove('drag');handleFile(event.dataTransfer.files[0])">
+            <i class="ti ti-file-text" aria-hidden="true"></i>
+            <p>Arrastra tu CSV aquí o haz clic para seleccionar</p>
+            <span>Columnas esperadas: ID, Grupo (Control/Treatment), Valor numérico</span>
+        </div>
+        <input type="file" id="csv-input" accept=".csv" onchange="handleFile(this.files[0])">
+
+        <div class="csv-preview" id="csv-preview">
+            <div class="csv-preview-header">
+                <span class="csv-preview-title" id="csv-file-name">archivo.csv cargado</span>
+                <button class="csv-clear" onclick="clearCSV()"><i class="ti ti-x" aria-hidden="true"></i>
+                    Limpiar</button>
+            </div>
+            <div class="group-pills" id="group-pills"></div>
+        </div>
+
+        <!-- Column mapping (shown after CSV load) -->
+        <div id="col-mapping" style="display:none">
+            <div class="section-label">Mapeo de columnas</div>
+            <div class="col-map">
+                <div class="field"><label>Columna de grupo</label><select id="col-group"></select></div>
+                <div class="field"><label>Valor grupo A</label><select id="val-a"></select></div>
+                <div class="field"><label>Valor grupo B</label><select id="val-b"></select></div>
+            </div>
+            <div class="field" style="margin-bottom:0.75rem"><label>Columna numérica</label><select
+                    id="col-value"></select></div>
+        </div>
+
+        <!-- MANUAL FORM (shown when no CSV or as override) -->
+        <div id="manual-form">
+            <div class="section-label" id="manual-label">Parámetros manuales</div>
+
+            <!-- MEDIA FORM -->
+            <div id="form-media">
+                <div class="grid2">
+                    <div class="field"><label>Tamaño de muestra (n)</label><input type="number" id="m-n" value="36"
+                            min="1"></div>
+                    <div class="field"><label>Media muestral (x̄)</label><input type="number" id="m-xbar" value="108"
+                            step="any"></div>
+                </div>
+                <div class="grid2">
+                    <div class="field"><label>Desviación estándar (σ)</label><input type="number" id="m-sigma"
+                            value="15" min="0.001" step="any"></div>
+                    <div class="field"><label>Valor de referencia (μ₀)</label><input type="number" id="m-mu0"
+                            value="105" step="any"></div>
+                </div>
+                <div class="grid2">
+                    <div class="field"><label>Significancia (α)</label>
+                        <select id="m-alpha">
+                            <option value="0.01">0.01</option>
+                            <option value="0.05" selected>0.05</option>
+                            <option value="0.10">0.10</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="field" style="margin-bottom:0.5rem"><label>Tipo de prueba</label>
+                    <div class="radio-group" id="m-tipo">
+                        <button class="radio-btn active" onclick="setTipo('media','izquierda',this)">← Cola
+                            izquierda</button>
+                        <button class="radio-btn" onclick="setTipo('media','doble',this)">↔ Dos colas</button>
+                        <button class="radio-btn" onclick="setTipo('media','derecha',this)">Cola derecha →</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PROPORCION FORM -->
+            <div id="form-proporcion" style="display:none">
+                <div class="grid2">
+                    <div class="field"><label>Tamaño de muestra (n)</label><input type="number" id="p-n" value="150"
+                            min="1"></div>
+                    <div class="field"><label>Proporción muestral (p̂)</label><input type="number" id="p-phat"
+                            value="0.42" min="0" max="1" step="0.001"></div>
+                </div>
+                <div class="grid2">
+                    <div class="field"><label>Proporción de referencia (p₀)</label><input type="number" id="p-p0"
+                            value="0.50" min="0.001" max="0.999" step="0.001"></div>
+                    <div class="field"><label>Significancia (α)</label>
+                        <select id="p-alpha">
+                            <option value="0.01">0.01</option>
+                            <option value="0.05" selected>0.05</option>
+                            <option value="0.10">0.10</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="field" style="margin-bottom:0.5rem"><label>Tipo de prueba</label>
+                    <div class="radio-group" id="p-tipo">
+                        <button class="radio-btn active" onclick="setTipo('prop','izquierda',this)">← Cola
+                            izquierda</button>
+                        <button class="radio-btn" onclick="setTipo('prop','doble',this)">↔ Dos colas</button>
+                        <button class="radio-btn" onclick="setTipo('prop','derecha',this)">Cola derecha →</button>
+                    </div>
+                </div>
+            </div>
+        </div><!-- end manual-form -->
+
+        <!-- CSV GROUP PARAMS -->
+        <div id="csv-params" style="display:none">
+            <div class="section-label">Parámetros de la prueba</div>
+            <div class="grid2">
+                <div class="field"><label>Valor de referencia (μ₀ o p₀)</label><input type="number" id="csv-ref"
+                        value="0" step="any"></div>
+                <div class="field"><label>Significancia (α)</label>
+                    <select id="csv-alpha">
+                        <option value="0.01">0.01</option>
+                        <option value="0.05" selected>0.05</option>
+                        <option value="0.10">0.10</option>
+                    </select>
+                </div>
+            </div>
+            <div class="field" style="margin-bottom:0.5rem"><label>Tipo de prueba</label>
+                <div class="radio-group" id="csv-tipo">
+                    <button class="radio-btn active" onclick="setTipo('csv','izquierda',this)">← Cola izquierda</button>
+                    <button class="radio-btn" onclick="setTipo('csv','doble',this)">↔ Dos colas</button>
+                    <button class="radio-btn" onclick="setTipo('csv','derecha',this)">Cola derecha →</button>
+                </div>
+            </div>
+        </div>
+
+        <button class="btn" id="calc-btn" onclick="runAll()">Calcular análisis completo ↗</button>
+
+        <hr/>
+
+        <div class="ai-links">
+            <p>En esta seccion mostraremos cómo la IA apoyó la creacion de esta webpage: De click <a href="https://claude.ai/share/9d4465ea-ba32-4a4e-9d87-a238d2fa49c1">aqui</a> para obtener la conversación con Claude.ai</p>
+        </div>
+
+        <hr/>
+
+        <!-- RESULTS -->
+        <div class="results" id="results-panel">
+            <hr class="separator">
+
+            <!-- Descriptive stats comparison (CSV mode) -->
+            <div id="csv-compare-section" class="res-section" style="display:none">
+                <div class="res-title">Estadísticas descriptivas por grupo</div>
+                <div class="compare-grid" id="compare-cards"></div>
+                <div class="chart-wrap" style="height:200px"><canvas id="boxChart" role="img"
+                        aria-label="Gráfico de distribución por grupo"></canvas></div>
+            </div>
+
+            <!-- Group A test -->
+            <div id="res-a-section" class="res-section" style="display:none">
+                <div class="res-title" id="res-a-title">Prueba — Grupo A</div>
+                <div class="metrics" id="res-a-metrics"></div>
+                <div class="verdict" id="res-a-verdict"></div>
+                <div class="chart-wrap"><canvas id="chartA" role="img"
+                        aria-label="Distribución normal grupo A"></canvas></div>
+                <div class="steps-card">
+                    <div class="steps-title">Procedimiento</div>
+                    <div id="res-a-steps"></div>
+                </div>
+            </div>
+
+            <hr class="separator" id="sep-ab" style="display:none">
+
+            <!-- Group B test -->
+            <div id="res-b-section" class="res-section" style="display:none">
+                <div class="res-title" id="res-b-title">Prueba — Grupo B</div>
+                <div class="metrics" id="res-b-metrics"></div>
+                <div class="verdict" id="res-b-verdict"></div>
+                <div class="chart-wrap"><canvas id="chartB" role="img"
+                        aria-label="Distribución normal grupo B"></canvas></div>
+                <div class="steps-card">
+                    <div class="steps-title">Procedimiento</div>
+                    <div id="res-b-steps"></div>
+                </div>
+            </div>
+
+            <!-- Comparison -->
+            <div id="res-comp-section" class="res-section" style="display:none">
+                <hr class="separator">
+                <div class="res-title">Comparación entre grupos (Prueba Z de dos muestras)</div>
+                <div class="metrics" id="res-comp-metrics"></div>
+                <div class="verdict" id="res-comp-verdict"></div>
+                <div class="chart-wrap"><canvas id="chartComp" role="img"
+                        aria-label="Distribución normal comparación entre grupos"></canvas></div>
+                <div class="steps-card">
+                    <div class="steps-title">Procedimiento</div>
+                    <div id="res-comp-steps"></div>
+                </div>
+            </div>
+
+            <!-- Single group result (manual mode) -->
+            <div id="res-single-section">
+                <div class="res-title" id="res-single-title">Resultados</div>
+                <div class="metrics" id="res-metrics"></div>
+                <div class="verdict" id="res-verdict"></div>
+                <div class="chart-wrap"><canvas id="distChart" role="img"
+                        aria-label="Distribución normal con región de rechazo"></canvas></div>
+                <div class="steps-card">
+                    <div class="steps-title">Procedimiento paso a paso</div>
+                    <div id="res-steps"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+    <script src="calculations.js"></script>
+</body>
+
+</html>
